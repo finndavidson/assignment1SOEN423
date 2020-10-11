@@ -1,4 +1,4 @@
-package Components.store.item;
+package src.Components.store.item;
 
 import java.io.Serializable;
 import java.rmi.Remote;
@@ -13,27 +13,20 @@ public class Item implements ItemInterface, Serializable {
     double price;
     SimpleDateFormat dateOfPurchase;
 
-    public Item(String name, String branch, Double price){
+    public Item(String name, String itemID, Double price){
         itemName = name;
-        itemID = branch + itemNumber;
+        this.itemID = itemID ;
         this.price = price;
-
     }
 
-    public void setDateOfPurchase(){
-        dateOfPurchase = new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ");
-    }
     public String getItemName() {
         return itemName;
-    }
-
-    public String getItemID() {
-        return itemID;
     }
 
     public double getPrice() {
         return price;
     }
 
-    public SimpleDateFormat getDateOfPurchase(){return dateOfPurchase;}
+    public String getItemID(){return itemID;}
+
 }

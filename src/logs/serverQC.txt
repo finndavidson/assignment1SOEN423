@@ -1,6 +1,0 @@
-10/10/2020 01:52:30-0400 Task SUCCESSFUL: Add Item to Inventory UserID: qcm1000 ItemID: qc1000 ItemName: toast Quantity: 4 Price: 5.0
-
-
-10/10/2020 01:52:55-0400 Task UNCOMPLETE: Find Item looking at another store:
-
-

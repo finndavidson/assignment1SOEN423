@@ -1,6 +1,6 @@
-package Components.store;
+package src.Components.store;
 
-import Components.store.item.Item;
+import src.Components.store.item.Item;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

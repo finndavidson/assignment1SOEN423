@@ -1,7 +1,7 @@
-package Components.client.user;
+package src.Components.client.user;
 
-import Components.store.StoreInterface;
-import Components.store.item.Item;
+import src.Components.store.StoreInterface;
+import src.Components.store.item.Item;
 
 import java.io.File;
 import java.io.IOException;

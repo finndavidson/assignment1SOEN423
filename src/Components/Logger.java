@@ -9,7 +9,7 @@ public class Logger{
     private static FileWriter fileWriter;
 
     private static String currentBranch = "";
-    private static String userBaseRelativeFilePath = "./src/logs/users";
+    private static String userBaseRelativeFilePath = "./src/logs/";
     private static String storeRelativeFilePath ;
 
     private static final String QC = "QC";
@@ -25,7 +25,7 @@ public class Logger{
         else if(storeID.toLowerCase().contains("bc"))
             currentBranch = "bc";
 
-        storeRelativeFilePath = "./src/logs/server";
+        storeRelativeFilePath = "./src/logs/";
         System.out.println("\nLog stored in" + storeRelativeFilePath);
         createFile(storeRelativeFilePath,storeID);
         createFileWriter(storeRelativeFilePath,storeID);
@@ -89,7 +89,7 @@ public class Logger{
         try {
             if (file.createNewFile()) {
              } else {
-                 System.out.println("/n");
+                 System.out.println("");
              }
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,6 +1,6 @@
-package StoreServer;
+package src.StoreServer;
 
-import Components.store.Store;
+import src.Components.store.Store;
 
 import java.rmi.Naming;
 import java.rmi.Remote;

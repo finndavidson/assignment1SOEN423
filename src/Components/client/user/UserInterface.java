@@ -1,4 +1,4 @@
-package Components.client.user;
+package src.Components.client.user;
 
 abstract  class UserInterface {
     public static int IDNumber = 1000;

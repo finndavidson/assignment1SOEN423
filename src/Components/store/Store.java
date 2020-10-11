@@ -1,5 +1,5 @@
-package Components.store;
-import Components.store.item.Item;
+package src.Components.store;
+import src.Components.store.item.Item;
 import Components.Logger;
 
 import java.io.*;
@@ -39,21 +39,31 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
 
     @Override
     public boolean purchaseItem(String userID, String itemID, SimpleDateFormat dateOfPurchase) throws RemoteException{
-       userID=userID.toLowerCase();
+        System.out.println("Item has been requested to be purchased");
+        userID=userID.toLowerCase();
        double price = 0.00;
+       if(userPurchaseLog.containsKey(userID) && userID.substring(0,2) != this.branchID)
+       {
+           System.out.println("User can only purchase one item from a different store");
+           Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + "  >> Task UNSUCCESSFUL: Purchase Item to Inventory UserID: "
+                   + userID + " ItemID: " + itemID + "user added to waitlist");
+           Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Purchase Item to Inventory UserID: "
+                   + userID + " ItemID: " + itemID + "user added to waitlist");
+           return false;
+       }
 
         switch (userID.substring(2, 3)) {
             case "u":
                 if (inventory.containsKey(itemID)) {
-                    for(Map.Entry<String, ArrayList<Item>> entry : inventory.entrySet())
-                        if(entry.getKey().equalsIgnoreCase(itemID)) {
+                    for (Map.Entry<String, ArrayList<Item>> entry : inventory.entrySet())
+                        if (entry.getKey().equalsIgnoreCase(itemID)) {
                             price = entry.getValue().get(0).getPrice();
-                            if (userBudgetLog.containsKey(userID.toLowerCase()) && userBudgetLog.get(userID.toLowerCase()) - price >=0)
+                            if (userBudgetLog.containsKey(userID.toLowerCase()) && userBudgetLog.get(userID.toLowerCase()) - price >= 0)
                                 userBudgetLog.put(userID.toLowerCase(), userBudgetLog.get(userID.toLowerCase()) - price);
-                            else if (1000 - price >=0)
+                            else if (1000 - price >= 0)
                                 userBudgetLog.put(userID.toLowerCase(), 1000.00 - price);
-                            else{
-                                System.out.print(userID + " does not have the funds to purchase Item:" + itemID );
+                            else {
+                                System.out.print(userID + " does not have the funds to purchase Item:" + itemID);
                                 Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + "  >> Task UNSUCCESSFUL: Purchase Item to Inventory UserID: "
                                         + userID + " ItemID: " + itemID);
                                 Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Purchase Item to Inventory UserID: "
@@ -63,45 +73,49 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
                         }
 
                     inventory.get(itemID).remove(0);
-                    HashMap<String,SimpleDateFormat> purchaseData = new HashMap<String,SimpleDateFormat>();
-                    purchaseData.put(itemID,dateOfPurchase);
-                    userPurchaseLog.put(userID,purchaseData);
+                    HashMap<String, SimpleDateFormat> purchaseData = new HashMap<String, SimpleDateFormat>();
+                    purchaseData.put(itemID, dateOfPurchase);
+                    userPurchaseLog.put(userID, purchaseData);
                     System.out.print("Item was successfully purchased");
                     Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + "  >> Task SUCCESSFUL: Purchase Item to Inventory UserID: "
                             + userID + " ItemID: " + itemID);
                     Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task SUCCESSFUL: Purchase Item to Inventory UserID: "
                             + userID + " ItemID: " + itemID);
                     return true;
-                } else {
+                }
+                else {
                     Boolean purchaseSuccesful = false;
-                    if (itemID.toLowerCase().contains("qc")) {
+                    if (itemID.toLowerCase().contains("qc") && !branchID.equalsIgnoreCase("QC")) {
                         purchaseSuccesful = requestItemOverUDP(quebecPurchaseItemUDPPort, userID, itemID, dateOfPurchase);
                         System.out.print(purchaseSuccesful);
-                    } else if (itemID.toLowerCase().contains("on")) {
+                    } else if (itemID.toLowerCase().contains("on") && !branchID.equalsIgnoreCase("ON")) {
                         purchaseSuccesful = requestItemOverUDP(ontarioPurchaseItemUDPPort, userID, itemID, dateOfPurchase);
-                    } else if (itemID.toLowerCase().contains("bc")) {
+                    } else if (itemID.toLowerCase().contains("bc") && !branchID.equalsIgnoreCase("bc")) {
                         purchaseSuccesful = requestItemOverUDP(britishColumbiaPurchaseItemUDPPort, userID, itemID, dateOfPurchase);
-                    } else {
-                        System.out.print("Item " + itemID + "is not availible you " + userID +
+                    }
+                    if(purchaseSuccesful = false)
+                    {
+                        System.out.print("Item " + itemID + "is not available to you " + userID +
                                 " will be added to the wait queue");
                         waitList(userID, itemID, dateOfPurchase);
                         Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + "  >> Task UNSUCCESSFUL: Purchase Item to Inventory UserID: "
                                 + userID + " ItemID: " + itemID + "user added to waitlist");
                         Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Purchase Item to Inventory UserID: "
                                 + userID + " ItemID: " + itemID + "user added to waitlist");
-                     }
-                    if(purchaseSuccesful){
-                        HashMap<String,SimpleDateFormat> purchaseData = new HashMap<>();
-                        purchaseData.put(itemID,dateOfPurchase);
-                        userPurchaseLog.put(userID,purchaseData);
+                        return true;
+                    }
+                    if (purchaseSuccesful) {
+                        HashMap<String, SimpleDateFormat> purchaseData = new HashMap<>();
+                        purchaseData.put(itemID, dateOfPurchase);
+                        userPurchaseLog.put(userID, purchaseData);
                         System.out.print("Item was successfully purchased");
                         Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + "  >> Task SUCCESSFUL: Purchase Item to Inventory UserID: "
                                 + userID + " ItemID: " + itemID);
                         Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task SUCCESSFUL: Purchase Item to Inventory UserID: "
                                 + userID + " ItemID: " + itemID);
                     }
-                    return purchaseSuccesful;
                 }
+                return false;
             default:
                 System.out.println(userID + " does not have permission to perform this method");
                 Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Purchase Item to Inventory UserID: "
@@ -114,6 +128,7 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
 
     @Override
     public ArrayList<Item> findItem(String userID, String itemName) throws RemoteException {
+        System.out.println("Item has been requested to be found by name");
         userID = userID.toLowerCase();
         ArrayList<Item> foundItems = new ArrayList<Item>();
 
@@ -142,11 +157,14 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
                 System.out.println( itemList.getKey() + " , " + itemList.getValue().get(0).getPrice());
             }
         }
+        Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) +" Task SUCCESSFUL: Find Items Inventory ");
+        Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) +" Task SUCCESSFUL: Find Items Inventory ");
         return foundItems;
     }
 
     @Override
     public boolean returnItem(String userID, String itemID, SimpleDateFormat dateOfReturn) throws RemoteException{
+        System.out.println("Item has been requested to be returned");
         userID = userID.toLowerCase();
         switch (userID.substring(2,3)) {
             case "u":
@@ -154,7 +172,7 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
                     if (userPurchaseLog.get(userID).containsKey(itemID)) {
                         if (isReturnable((userPurchaseLog.get(userID).get(itemID)), dateOfReturn)) {
                             userReturnLog.put(userID, userPurchaseLog.get(userID));
-                            //TODO Put item back into inventory
+                            addItem(this.branchID+"1000", itemID, "returnedItem", 1, 1.00);
                             System.out.println(userID + " has been returned");
                             Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task SUCCESSFUL: Return Item to Inventory USERID: "
                                     + userID + " ItemID: " + itemID);
@@ -191,6 +209,7 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
 
     @Override
     public boolean addItem(String userID, String itemID, String itemName, int quantity, double price) throws RemoteException{
+        System.out.println("Item has been requested to be added");
         switch (userID.substring(2, 3).toLowerCase()) {
             case "m":
                 itemID = itemID.toLowerCase();
@@ -204,7 +223,7 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
                         inventory.get(itemID).add(item);
                         index--;
                         System.out.println("Checking wait list");
-                        checkWaitList(itemID);
+                        checkWaitList(itemID,quantity);
                     }
                     else if ((inventory.get(itemID).size() > 0 && price == inventory.get(itemID).get(0).getPrice())
                             || inventory.get(itemID) == null)
@@ -219,7 +238,7 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
                             Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) +  " Task SUCCESSFUL: Add Item to Inventory UserID: "
                                     +userID+" ItemID: "+itemID+" ItemName: "+itemName+" Quantity: "+quantity+" Price: "+price);
                             System.out.println("Checking wait list");
-                            checkWaitList(itemID);
+                            checkWaitList(itemID,quantity);
                         }
                     }
                     else {
@@ -248,11 +267,12 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
 
     @Override
     public boolean removeItem(String userID, String itemID, int quantity) throws RemoteException{
+        System.out.println("Item has been requested to be removed");
         userID = userID.toLowerCase();
         switch (userID.substring(2, 3)) {
             case "m":
                 int index = quantity;
-                while (index!= 0) {
+                while (index > 0) {
                     if (inventory.containsKey(itemID) == true) {
                         inventory.get(itemID).remove(0);
                         index--;
@@ -278,6 +298,10 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
                         inventory.get(itemID).remove(0);
                     }
                     System.out.print("All " + itemID + " was removed from inventoory");
+                    Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task SUCCESSFUL: Remove Item from Inventory ManagerID: "
+                            +userID+" ItemID: "+itemID + " Quantity: ALL");
+                    Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date())  + " Task SUCCESSFUL: Remove Item from Inventory ManagerID: "
+                            +userID+" ItemID: "+itemID + " Quantity: ALL");
                 }
                 return true;
             default:
@@ -292,39 +316,52 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
 
     @Override
     public String listItemAvailability(String userID) throws RemoteException {
-        StringBuilder returnMessage = new StringBuilder("This store contains the following items: \r\n"+"\t");
-       if(inventory != null) {
-           for (Map.Entry<String, ArrayList<Item>> entry : inventory.entrySet()) {
-               returnMessage.append(entry.getKey() + " : \r\n");
-               for (Item item : entry.getValue()) {
-                   returnMessage.append("\t" + item.toString() + "\n");
-               }
-           }
-           System.out.print(returnMessage.toString());
-           Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task SUCCESSFUL: Listing Inventory ManagerID: "
-                   + userID);
-           Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task SUCCESSFUL: Listing Inventory ManagerID: "
-                   + userID);
-           return returnMessage.toString();
-       }else{
-           System.out.print("no items are availible\n");
-           Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Listing Inventory ManagerID: "
-                   + userID);
-           Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Listing Inventory ManagerID: "
-                   + userID);
-           return null;
-       }
-
+        userID = userID.toLowerCase();
+        switch (userID) {
+            case "m":
+                StringBuilder returnMessage = new StringBuilder("This store contains the following items: \r\n" + "\t");
+                if (inventory != null) {
+                    for (Map.Entry<String, ArrayList<Item>> entry : inventory.entrySet()) {
+                        returnMessage.append(entry.getKey() + " : \r\n");
+                        for (Item item : entry.getValue()) {
+                            returnMessage.append("\tItemID: "+ item.getItemID() + " Item Name: " + item.getItemName() + " Price " + item.getPrice() + "\n");
+                        }
+                    }
+                    System.out.print(returnMessage.toString());
+                    Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task SUCCESSFUL: Listing Inventory ManagerID: "
+                            + userID);
+                    Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task SUCCESSFUL: Listing Inventory ManagerID: "
+                            + userID);
+                    return returnMessage.toString();
+                } else {
+                    System.out.print("no items are availible\n");
+                    Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Listing Inventory ManagerID: "
+                            + userID);
+                    Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Listing Inventory ManagerID: "
+                            + userID);
+                    return null;
+                }
+            default:
+                System.out.println(userID + " does not have permission to perform this method");
+                Logger.writeStoreLog(branchID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Listing Inventory ManagerID: "
+                        + userID);
+                Logger.writeUserLog(userID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ").format(new Date()) + " Task UNSUCCESSFUL: Listing Inventory ManagerID: "
+                        + userID);
+        }
+        return "";
     }
 
-    private void checkWaitList(String itemID) throws RemoteException {
-        for(Map.Entry<String, List<String>> entry : waitList.entrySet())
-            for(String waitListItemID : entry.getValue())
-                if(itemID.equalsIgnoreCase(waitListItemID)) {
-                    System.out.print(entry.getKey() + " is at the top of the list and will attempt to purchase" + itemID);
-                        purchaseItem(entry.getKey(),itemID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ"));
+    private void checkWaitList(String itemID, int quantity) throws RemoteException {
+        for (Map.Entry<String, List<String>> entry : waitList.entrySet()) {
+            for (String waitListItemID : entry.getValue()) {
+                if (itemID.equalsIgnoreCase(entry.getKey()) && entry.getValue().size() > 0 && quantity>0) {
+                    System.out.print(entry.getValue().get(0) + " is at the top of the list and will attempt to purchase" + itemID);
+                    purchaseItem(entry.getValue().get(0), itemID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ"));
+                    quantity--;
                 }
+            }
         }
+    }
 
     public Boolean waitList(String userID, String itemID, SimpleDateFormat dateOfPurchase) throws RemoteException{
         Boolean isWaitListed = false;
@@ -352,21 +389,11 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
         return isWaitListed;
     }
 
-    private boolean customerHasRequiredFunds(String userID, double price) {
-        for(Map.Entry<String, Double> entry : userBudgetLog.entrySet())
-            if(entry.getKey().equalsIgnoreCase(userID))
-                return (entry.getValue().doubleValue() - price) >= 0.00 ;
-            else
-                return false;
-
-        return true;
-    }
-
     private void openAllPorts(String provinceID) {
         switch (provinceID.toLowerCase()) {
             case "on":
                 openListItemUDPPort(ontarioListItemUDPPort);
-                openPurchaseItemUDPPort(ontarioPurchaseItemUDPPort);
+                    openPurchaseItemUDPPort(ontarioPurchaseItemUDPPort);
                 break;
             case "qc":
                 openListItemUDPPort(quebecListItemUDPPort);
@@ -415,16 +442,15 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
             Logger.writeUserLog(userID, dateOfPurchase + " Task UNCOMPLETE: Purchase Item looking at another store");
             Logger.writeStoreLog(branchID, dateOfPurchase + " Task UNCOMPLETE: Purchase Item looking at another store:");
 
-            DatagramPacket incomingPacket = new DatagramPacket(incomingData, incomingData.length, host, dp.getPort());
+            DatagramPacket incomingPacket = new DatagramPacket(incomingData, incomingData.length, host, storePort);
             socket.receive(incomingPacket);
             byte[] data = incomingPacket.getData();
             ByteArrayInputStream in = new ByteArrayInputStream(data);
             ObjectInputStream is = new ObjectInputStream(in);
 
             purchaseSuccesful = (Boolean) is.readObject();
-
-            System.out.println("Item object received and purchased successful:  " + purchaseSuccesful);
-            System.out.print(userID + "does not have permission to perform this method");
+            if(purchaseSuccesful)
+            System.out.println("Item object received and purchased.");
             return purchaseSuccesful;
         } catch (Exception e) {
             System.err.println("Exception " + e);
@@ -439,7 +465,6 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
             serverSocket = new DatagramSocket(updPort);
             byte[] receiveData = new byte[1024];
             String sendString = "Purchase item port opened and has received purchase request...";
-            byte[] sendData = sendString.getBytes("UTF-8");
 
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
@@ -577,14 +602,14 @@ public class Store extends UnicastRemoteObject implements StoreInterface {
                     String itemID = entry.getValue();
 
                     try {
-                        InetAddress host = InetAddress.getLocalHost();
+                        InetAddress ip = InetAddress.getLocalHost();
                         purchaseOrderSuccess = purchaseItem(userID, itemID, new SimpleDateFormat("MM/dd/yyyy HH:mm:ssZ"));
                         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                         ObjectOutputStream os = new ObjectOutputStream(outputStream);
                         os.writeObject(purchaseOrderSuccess);
 
                         byte[] data = outputStream.toByteArray();
-                        DatagramPacket sendPacket = new DatagramPacket(data, data.length, host , receivePacket.getPort());
+                        DatagramPacket sendPacket = new DatagramPacket(data, data.length, ip, receivePacket.getPort());
                         serverSocket.send(sendPacket);
                     } catch (Exception e) {
                         e.printStackTrace();

@@ -1,12 +1,13 @@
-package StoreServer;
+package src.StoreServer;
 
-import Components.store.Store;
+import src.Components.store.Store;
 
 import java.rmi.Naming;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
+import java.text.SimpleDateFormat;
 import java.net.*;
 import java.io.*;
 import java.rmi.server.UnicastRemoteObject;
@@ -27,6 +28,7 @@ public class QCStoreServer {
             Naming.rebind(url, (Remote) quebecStore);
 
             System.out.print("Quebec store waiting for the client's requests\n");
+
         } catch (Exception e) {
             e.printStackTrace();
         }
